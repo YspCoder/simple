@@ -93,5 +93,5 @@ func Init(conf *ConfigEntity) (*MongoDB, error) {
 
 func (c *MongoDB) CollectionByName(name string, opts ...*options.CollectionOptions) *Collection {
 	coll := c.Db.Collection(name, opts...)
-	return &Collection{Collection: coll, ctx: c.Ctx}
+	return &Collection{Collection: coll}
 }

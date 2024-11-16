@@ -1,18 +1,19 @@
 package mdu
 
 import (
+	"context"
 	"github.com/YspCoder/simple/mongo/field"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func create(c *Collection, model Model, opts ...*options.InsertOneOptions) (interface{}, error) {
+func create(ctx context.Context, c *Collection, model Model, opts ...*options.InsertOneOptions) (interface{}, error) {
 	// Call to saving hook
-	if err := beforeCreateHooks(c.ctx, model); err != nil {
+	if err := beforeCreateHooks(ctx, model); err != nil {
 		return nil, err
 	}
 
-	res, err := c.InsertOne(c.ctx, model, opts...)
+	res, err := c.InsertOne(ctx, model, opts...)
 
 	if err != nil {
 		return nil, err
@@ -21,55 +22,55 @@ func create(c *Collection, model Model, opts ...*options.InsertOneOptions) (inte
 	// Set new id
 	model.SetID(res.InsertedID.(string))
 
-	err = afterCreateHooks(c.ctx, model)
+	err = afterCreateHooks(ctx, model)
 	if err != nil {
 		return nil, err
 	}
 	return res.InsertedID, nil
 }
 
-func first(c *Collection, filter interface{}, model Model, opts ...*options.FindOneOptions) error {
-	return c.FindOne(c.ctx, filter, opts...).Decode(model)
+func first(ctx context.Context, c *Collection, filter interface{}, model Model, opts ...*options.FindOneOptions) error {
+	return c.FindOne(ctx, filter, opts...).Decode(model)
 }
 
-func update(c *Collection, model Model, opts ...*options.UpdateOptions) error {
+func update(ctx context.Context, c *Collection, model Model, opts ...*options.UpdateOptions) error {
 	// Call to saving hook
-	if err := beforeUpdateHooks(c.ctx, model); err != nil {
+	if err := beforeUpdateHooks(ctx, model); err != nil {
 		return err
 	}
 
-	res, err := c.UpdateOne(c.ctx, bson.M{field.ID: model.GetID()}, bson.M{"$set": model}, opts...)
+	res, err := c.UpdateOne(ctx, bson.M{field.ID: model.GetID()}, bson.M{"$set": model}, opts...)
 
 	if err != nil {
 		return err
 	}
 
-	return afterUpdateHooks(c.ctx, res, model)
+	return afterUpdateHooks(ctx, res, model)
 }
 
-func patch(c *Collection, model Model, fields map[string]interface{}, opts ...*options.UpdateOptions) error {
+func patch(ctx context.Context, c *Collection, model Model, fields map[string]interface{}, opts ...*options.UpdateOptions) error {
 	// Call to saving hook
-	if err := beforeUpdateHooks(c.ctx, model); err != nil {
+	if err := beforeUpdateHooks(ctx, model); err != nil {
 		return err
 	}
 
-	res, err := c.UpdateOne(c.ctx, bson.M{field.ID: model.GetID()}, bson.M{"$set": fields}, opts...)
+	res, err := c.UpdateOne(ctx, bson.M{field.ID: model.GetID()}, bson.M{"$set": fields}, opts...)
 
 	if err != nil {
 		return err
 	}
 
-	return afterUpdateHooks(c.ctx, res, model)
+	return afterUpdateHooks(ctx, res, model)
 }
 
-func deleteByID(c *Collection, model Model) error {
-	if err := beforeDeleteHooks(c.ctx, model); err != nil {
+func deleteByID(ctx context.Context, c *Collection, model Model) error {
+	if err := beforeDeleteHooks(ctx, model); err != nil {
 		return err
 	}
-	res, err := c.DeleteOne(c.ctx, bson.M{field.ID: model.GetID()})
+	res, err := c.DeleteOne(ctx, bson.M{field.ID: model.GetID()})
 	if err != nil {
 		return err
 	}
 
-	return afterDeleteHooks(c.ctx, res, model)
+	return afterDeleteHooks(ctx, res, model)
 }
