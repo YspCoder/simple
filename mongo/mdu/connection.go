@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/YspCoder/simple/common/utils"
+	"github.com/jinzhu/inflection"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/event"
@@ -119,8 +121,9 @@ func Init(conf *ConfigEntity, models ...interface{}) (err error) {
 
 // 获取集合名称
 func getCollectionName(model interface{}) string {
-	// 可以通过反射获取结构体名称作为集合名，或自定义处理
-	return reflect.TypeOf(model).Name()
+	name := reflect.TypeOf(model).Elem().Name()
+
+	return inflection.Plural(utils.ToLowerCamelCase(name))
 }
 
 // 提取结构体中的索引信息
