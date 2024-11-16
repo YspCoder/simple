@@ -125,12 +125,21 @@ func getCollectionName(model interface{}) string {
 
 	return inflection.Plural(utils.ToLowerCamelCase(name))
 }
-
-// 提取结构体中的索引信息
 func extractIndexes(model interface{}) []mongo.IndexModel {
 	var indexes []mongo.IndexModel
 
-	modelType := reflect.TypeOf(model)
+	modelValue := reflect.ValueOf(model)
+	// 如果传入的是指针类型，则获取指针指向的值
+	if modelValue.Kind() == reflect.Ptr {
+		modelValue = modelValue.Elem()
+	}
+	modelType := modelValue.Type()
+
+	// 确保 model 是结构体类型
+	if modelType.Kind() != reflect.Struct {
+		log.Fatalf("传入的 model 不是结构体类型，无法提取索引")
+	}
+
 	for i := 0; i < modelType.NumField(); i++ {
 		field := modelType.Field(i)
 		indexTag := field.Tag.Get("index")
