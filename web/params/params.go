@@ -3,11 +3,11 @@ package params
 import (
 	"errors"
 	"fmt"
-	"github.com/YspCoder/simple/common/paging"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/YspCoder/simple/sqls"
 	"github.com/spf13/cast"
 
 	"github.com/YspCoder/simple/common/dates"
@@ -255,7 +255,7 @@ func FormDate(ctx iris.Context, name string) *time.Time {
 	return nil
 }
 
-func GetPaging(ctx iris.Context) *paging.Paging {
+func GetPaging(ctx iris.Context) *sqls.Paging {
 	page := FormValueIntDefault(ctx, "page", 1)
 	limit := FormValueIntDefault(ctx, "limit", 20)
 	if page <= 0 {
@@ -264,5 +264,5 @@ func GetPaging(ctx iris.Context) *paging.Paging {
 	if limit <= 0 {
 		limit = 20
 	}
-	return &paging.Paging{Page: page, Limit: limit}
+	return &sqls.Paging{Page: page, Limit: limit}
 }

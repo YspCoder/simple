@@ -1,16 +1,15 @@
 package sqls
 
 import (
-	"github.com/YspCoder/simple/common/paging"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type Cnd struct {
-	SelectCols []string       // 要查询的字段，如果为空，表示查询所有字段
-	Params     []ParamPair    // 参数
-	Orders     []OrderByCol   // 排序
-	Paging     *paging.Paging // 分页
+	SelectCols []string     // 要查询的字段，如果为空，表示查询所有字段
+	Params     []ParamPair  // 参数
+	Orders     []OrderByCol // 排序
+	Paging     *Paging      // 分页
 }
 
 type ParamPair struct {
@@ -112,7 +111,7 @@ func (s *Cnd) Limit(limit int) *Cnd {
 
 func (s *Cnd) Page(page, limit int) *Cnd {
 	if s.Paging == nil {
-		s.Paging = &paging.Paging{Page: page, Limit: limit}
+		s.Paging = &Paging{Page: page, Limit: limit}
 	} else {
 		s.Paging.Page = page
 		s.Paging.Limit = limit
