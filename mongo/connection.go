@@ -194,10 +194,11 @@ func extractIndexes(model interface{}) []mongo.IndexModel {
 				}
 			}
 
+			if isUnique {
+				opts.SetUnique(true)
+			}
+
 			if len(keys) > 0 {
-				if isUnique {
-					opts.SetUnique(true)
-				}
 				indexes = append(indexes, mongo.IndexModel{
 					Keys:    keys,
 					Options: opts,
