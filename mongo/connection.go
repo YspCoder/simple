@@ -1,4 +1,4 @@
-package mdu
+package mongo
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -125,30 +126,71 @@ func getCollectionName(model interface{}) string {
 
 	return inflection.Plural(utils.ToLowerCamelCase(name))
 }
+
 func extractIndexes(model interface{}) []mongo.IndexModel {
 	var indexes []mongo.IndexModel
 
 	modelValue := reflect.ValueOf(model)
-	// 如果传入的是指针类型，则获取指针指向的值
+	// If the input is a pointer, get the value it points to
 	if modelValue.Kind() == reflect.Ptr {
 		modelValue = modelValue.Elem()
 	}
 	modelType := modelValue.Type()
 
-	// 确保 model 是结构体类型
+	// Ensure the model is a struct type
 	if modelType.Kind() != reflect.Struct {
-		log.Fatalf("传入的 model 不是结构体类型，无法提取索引")
+		log.Fatalf("The provided model is not a struct type, cannot extract indexes")
 	}
 
 	for i := 0; i < modelType.NumField(); i++ {
 		field := modelType.Field(i)
 		indexTag := field.Tag.Get("index")
 		if indexTag != "" {
-			keys := bson.D{{Key: field.Tag.Get("bson"), Value: 1}}
-			opts := options.Index()
-			if indexTag == "unique" {
-				opts.SetUnique(true)
+			// Get the field name from the bson tag
+			bsonTag := field.Tag.Get("bson")
+			if bsonTag == "" || bsonTag == "-" {
+				continue
 			}
+
+			var keys bson.D
+			opts := options.Index()
+
+			// Parse index type
+			switch indexTag {
+			case "1":
+				keys = bson.D{{Key: bsonTag, Value: 1}} // Ascending index
+			case "-1":
+				keys = bson.D{{Key: bsonTag, Value: -1}} // Descending index
+			case "unique":
+				keys = bson.D{{Key: bsonTag, Value: 1}}
+				opts.SetUnique(true) // Unique index
+			case "sparse":
+				keys = bson.D{{Key: bsonTag, Value: 1}}
+				opts.SetSparse(true) // Sparse index
+			case "text":
+				keys = bson.D{{Key: bsonTag, Value: "text"}} // Text index
+			case "hashed":
+				keys = bson.D{{Key: bsonTag, Value: "hashed"}} // Hashed index
+			case "ttl":
+				keys = bson.D{{Key: bsonTag, Value: 1}}
+				// TTL index requires a ttlSeconds tag
+				ttlSecondsTag := field.Tag.Get("ttlSeconds")
+				if ttlSecondsTag == "" {
+					log.Fatalf("TTL index must have a ttlSeconds tag specified")
+				}
+				ttlSeconds, err := strconv.Atoi(ttlSecondsTag)
+				if err != nil {
+					log.Fatalf("The ttlSeconds tag must be an integer: %v", err)
+				}
+				opts.SetExpireAfterSeconds(int32(ttlSeconds)) // TTL index
+			case "2dsphere":
+				keys = bson.D{{Key: bsonTag, Value: "2dsphere"}} // 2dsphere geospatial index
+			case "2d":
+				keys = bson.D{{Key: bsonTag, Value: "2d"}} // 2d geospatial index
+			default:
+				continue
+			}
+
 			indexes = append(indexes, mongo.IndexModel{
 				Keys:    keys,
 				Options: opts,

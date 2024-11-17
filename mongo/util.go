@@ -1,4 +1,4 @@
-package mdu
+package mongo
 
 import (
 	"github.com/YspCoder/simple/common/utils"

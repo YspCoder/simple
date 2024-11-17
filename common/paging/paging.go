@@ -1,4 +1,4 @@
-package sqls
+package paging
 
 // Paging 分页请求数据
 type Paging struct {

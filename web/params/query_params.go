@@ -1,6 +1,7 @@
 package params
 
 import (
+	"github.com/YspCoder/simple/common/paging"
 	"github.com/YspCoder/simple/common/strs/strcase"
 	"github.com/YspCoder/simple/sqls"
 	"github.com/kataras/iris/v12"
@@ -107,7 +108,7 @@ func (q *QueryParams) Limit(limit int) *QueryParams {
 
 func (q *QueryParams) Page(page, limit int) *QueryParams {
 	if q.Paging == nil {
-		q.Paging = &sqls.Paging{Page: page, Limit: limit}
+		q.Paging = &paging.Paging{Page: page, Limit: limit}
 	} else {
 		q.Paging.Page = page
 		q.Paging.Limit = limit
