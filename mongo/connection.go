@@ -16,6 +16,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -155,46 +156,53 @@ func extractIndexes(model interface{}) []mongo.IndexModel {
 			var keys bson.D
 			opts := options.Index()
 
-			// Parse index type
-			switch indexTag {
-			case "1":
-				keys = bson.D{{Key: bsonTag, Value: 1}} // Ascending index
-			case "-1":
-				keys = bson.D{{Key: bsonTag, Value: -1}} // Descending index
-			case "unique":
-				keys = bson.D{{Key: bsonTag, Value: 1}}
-				opts.SetUnique(true) // Unique index
-			case "sparse":
-				keys = bson.D{{Key: bsonTag, Value: 1}}
-				opts.SetSparse(true) // Sparse index
-			case "text":
-				keys = bson.D{{Key: bsonTag, Value: "text"}} // Text index
-			case "hashed":
-				keys = bson.D{{Key: bsonTag, Value: "hashed"}} // Hashed index
-			case "ttl":
-				keys = bson.D{{Key: bsonTag, Value: 1}}
-				// TTL index requires a ttlSeconds tag
-				ttlSecondsTag := field.Tag.Get("ttlSeconds")
-				if ttlSecondsTag == "" {
-					log.Fatalf("TTL index must have a ttlSeconds tag specified")
+			// Parse index type, split by comma to support multiple attributes like "1,unique"
+			indexAttributes := strings.Split(indexTag, ",")
+			isUnique := false
+			for _, attr := range indexAttributes {
+				switch strings.TrimSpace(attr) {
+				case "1":
+					keys = bson.D{{Key: bsonTag, Value: 1}} // Ascending index
+				case "-1":
+					keys = bson.D{{Key: bsonTag, Value: -1}} // Descending index
+				case "unique":
+					isUnique = true
+				case "sparse":
+					opts.SetSparse(true) // Sparse index
+				case "text":
+					keys = bson.D{{Key: bsonTag, Value: "text"}} // Text index
+				case "hashed":
+					keys = bson.D{{Key: bsonTag, Value: "hashed"}} // Hashed index
+				case "ttl":
+					keys = bson.D{{Key: bsonTag, Value: 1}}
+					// TTL index requires a ttlSeconds tag
+					ttlSecondsTag := field.Tag.Get("ttlSeconds")
+					if ttlSecondsTag == "" {
+						log.Fatalf("TTL index must have a ttlSeconds tag specified")
+					}
+					ttlSeconds, err := strconv.Atoi(ttlSecondsTag)
+					if err != nil {
+						log.Fatalf("The ttlSeconds tag must be an integer: %v", err)
+					}
+					opts.SetExpireAfterSeconds(int32(ttlSeconds)) // TTL index
+				case "2dsphere":
+					keys = bson.D{{Key: bsonTag, Value: "2dsphere"}} // 2dsphere geospatial index
+				case "2d":
+					keys = bson.D{{Key: bsonTag, Value: "2d"}} // 2d geospatial index
+				default:
+					continue
 				}
-				ttlSeconds, err := strconv.Atoi(ttlSecondsTag)
-				if err != nil {
-					log.Fatalf("The ttlSeconds tag must be an integer: %v", err)
-				}
-				opts.SetExpireAfterSeconds(int32(ttlSeconds)) // TTL index
-			case "2dsphere":
-				keys = bson.D{{Key: bsonTag, Value: "2dsphere"}} // 2dsphere geospatial index
-			case "2d":
-				keys = bson.D{{Key: bsonTag, Value: "2d"}} // 2d geospatial index
-			default:
-				continue
 			}
 
-			indexes = append(indexes, mongo.IndexModel{
-				Keys:    keys,
-				Options: opts,
-			})
+			if len(keys) > 0 {
+				if isUnique {
+					opts.SetUnique(true)
+				}
+				indexes = append(indexes, mongo.IndexModel{
+					Keys:    keys,
+					Options: opts,
+				})
+			}
 		}
 	}
 	return indexes
