@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"github.com/YspCoder/simple/mongo/field"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,42 +38,42 @@ func (c *Cnd) Eq(column string, value interface{}) *Cnd {
 }
 
 func (c *Cnd) NotEq(column string, value interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$ne": value}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Ne: value}})
 	return c
 }
 
 func (c *Cnd) Gt(column string, value interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$gt": value}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Gt: value}})
 	return c
 }
 
 func (c *Cnd) Gte(column string, value interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$gte": value}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Gte: value}})
 	return c
 }
 
 func (c *Cnd) Lt(column string, value interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$lt": value}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Lt: value}})
 	return c
 }
 
 func (c *Cnd) Lte(column string, value interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$lte": value}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Lte: value}})
 	return c
 }
 
 func (c *Cnd) Like(column string, str string) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$regex": str, "$options": "i"}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Regex: str, "$options": "i"}})
 	return c
 }
 
 func (c *Cnd) In(column string, params []interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$in": params}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.In: params}})
 	return c
 }
 
 func (c *Cnd) NotIn(column string, params []interface{}) *Cnd {
-	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{"$nin": params}})
+	c.Filter = append(c.Filter, bson.E{Key: column, Value: bson.M{field.Nin: params}})
 	return c
 }
 
@@ -196,14 +197,14 @@ func (c *Cnd) Aggregate(ctx context.Context, db *mongo.Collection, pipeline []bs
 func (c *Cnd) AggregateWithConditions(ctx context.Context, db *mongo.Collection, pipeline []bson.M, results interface{}) error {
 	// Add filter stage if there are any conditions
 	if len(c.Filter) > 0 {
-		pipeline = append([]bson.M{{"$match": c.Filter.Map()}}, pipeline...)
+		pipeline = append([]bson.M{{field.Match: c.Filter}}, pipeline...)
 	}
 
 	// Add sort stage if sorting is specified
 	if len(c.Sort) > 0 {
-		sortStage := bson.M{"$sort": bson.M{}}
+		sortStage := bson.M{field.Sort: bson.M{}}
 		for _, s := range c.Sort {
-			sortStage["$sort"].(bson.M)[s.Key] = s.Value
+			sortStage[field.Sort].(bson.M)[s.Key] = s.Value
 		}
 		pipeline = append(pipeline, sortStage)
 	}
@@ -211,11 +212,11 @@ func (c *Cnd) AggregateWithConditions(ctx context.Context, db *mongo.Collection,
 	// Add limit and skip for pagination
 	if c.Paging != nil {
 		if c.Paging.Limit > 0 {
-			pipeline = append(pipeline, bson.M{"$limit": int64(c.Paging.Limit)})
+			pipeline = append(pipeline, bson.M{field.Limit: int64(c.Paging.Limit)})
 		}
 		if c.Paging.Page > 0 && c.Paging.Limit > 0 {
 			offset := int64((c.Paging.Page - 1) * c.Paging.Limit)
-			pipeline = append(pipeline, bson.M{"$skip": offset})
+			pipeline = append(pipeline, bson.M{field.Skip: offset})
 		}
 	}
 
