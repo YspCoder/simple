@@ -1,11 +1,9 @@
 package web
 
-import "github.com/YspCoder/simple/sqls"
-
 // PageResult 分页返回数据
 type PageResult struct {
-	Page    *sqls.Paging `json:"page"`    // 分页信息
-	Results interface{}  `json:"results"` // 数据
+	Total   int64       `json:"total"`   // 分页信息
+	Results interface{} `json:"results"` // 数据
 }
 
 // CursorResult Cursor分页返回数据

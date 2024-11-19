@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/YspCoder/simple/common/structs"
-	"github.com/YspCoder/simple/sqls"
 )
 
 type JsonResult struct {
@@ -37,10 +36,10 @@ func JsonItemList(data []interface{}) *JsonResult {
 	}
 }
 
-func JsonPageData(results interface{}, page *sqls.Paging) *JsonResult {
+func JsonPageData(results interface{}, total int64) *JsonResult {
 	return JsonData(&PageResult{
 		Results: results,
-		Page:    page,
+		Total:   total,
 	})
 }
 
