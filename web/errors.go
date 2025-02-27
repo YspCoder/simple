@@ -13,11 +13,11 @@ func NewErrorData(code int, text string, data interface{}) *CodeError {
 }
 
 type CodeError struct {
-	Code    int
-	Message string
-	Data    interface{}
+	Code int
+	Msg  string
+	Data interface{}
 }
 
 func (e *CodeError) Error() string {
-	return strconv.Itoa(e.Code) + ": " + e.Message
+	return strconv.Itoa(e.Code) + ": " + e.Msg
 }

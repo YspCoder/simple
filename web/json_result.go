@@ -1,38 +1,39 @@
 package web
 
 import (
+	"errors"
 	"github.com/YspCoder/simple/common/structs"
 )
 
 type JsonResult struct {
-	ErrorCode int         `json:"errorCode"`
-	Message   string      `json:"message"`
-	Data      interface{} `json:"data"`
-	Success   bool        `json:"success"`
+	Code    int         `json:"code"`
+	Msg     string      `json:"msg"`
+	Data    interface{} `json:"data"`
+	Success bool        `json:"success"`
 }
 
 func Json(code int, message string, data interface{}, success bool) *JsonResult {
 	return &JsonResult{
-		ErrorCode: code,
-		Message:   message,
-		Data:      data,
-		Success:   success,
+		Code:    code,
+		Msg:     message,
+		Data:    data,
+		Success: success,
 	}
 }
 
 func JsonData(data interface{}) *JsonResult {
 	return &JsonResult{
-		ErrorCode: 0,
-		Data:      data,
-		Success:   true,
+		Code:    0,
+		Data:    data,
+		Success: true,
 	}
 }
 
 func JsonItemList(data []interface{}) *JsonResult {
 	return &JsonResult{
-		ErrorCode: 0,
-		Data:      data,
-		Success:   true,
+		Code:    0,
+		Data:    data,
+		Success: true,
 	}
 }
 
@@ -53,52 +54,53 @@ func JsonCursorData(results interface{}, cursor string, hasMore bool) *JsonResul
 
 func JsonSuccess() *JsonResult {
 	return &JsonResult{
-		ErrorCode: 0,
-		Data:      nil,
-		Success:   true,
+		Code:    0,
+		Data:    nil,
+		Success: true,
 	}
 }
 
 func JsonError(err error) *JsonResult {
-	if e, ok := err.(*CodeError); ok {
+	var e *CodeError
+	if errors.As(err, &e) {
 		return &JsonResult{
-			ErrorCode: e.Code,
-			Message:   e.Message,
-			Data:      e.Data,
-			Success:   false,
+			Code:    e.Code,
+			Msg:     e.Msg,
+			Data:    e.Data,
+			Success: false,
 		}
 	}
 	return &JsonResult{
-		ErrorCode: 0,
-		Message:   err.Error(),
-		Data:      nil,
-		Success:   false,
+		Code:    0,
+		Msg:     err.Error(),
+		Data:    nil,
+		Success: false,
 	}
 }
 
 func JsonErrorMsg(message string) *JsonResult {
 	return &JsonResult{
-		ErrorCode: 0,
-		Message:   message,
-		Data:      nil,
-		Success:   false,
+		Code:    0,
+		Msg:     message,
+		Data:    nil,
+		Success: false,
 	}
 }
 func JsonErrorCode(code int, message string) *JsonResult {
 	return &JsonResult{
-		ErrorCode: code,
-		Message:   message,
-		Data:      nil,
-		Success:   false,
+		Code:    code,
+		Msg:     message,
+		Data:    nil,
+		Success: false,
 	}
 }
 
 func JsonErrorData(code int, message string, data interface{}) *JsonResult {
 	return &JsonResult{
-		ErrorCode: code,
-		Message:   message,
-		Data:      data,
-		Success:   false,
+		Code:    code,
+		Msg:     message,
+		Data:    data,
+		Success: false,
 	}
 }
 
