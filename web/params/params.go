@@ -3,6 +3,7 @@ package params
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/YspCoder/simple/common/strs"
 	"github.com/iris-contrib/schema"
 	"github.com/kataras/iris/v12"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -22,6 +24,13 @@ var (
 func init() {
 	decoder.AddAliasTag("form", "json")
 	decoder.ZeroEmpty(true)
+	decoder.RegisterConverter(primitive.ObjectID{}, func(value string) reflect.Value {
+		objID, err := primitive.ObjectIDFromHex(value)
+		if err != nil {
+			return reflect.ValueOf(primitive.ObjectID{})
+		}
+		return reflect.ValueOf(objID)
+	})
 }
 
 // param error
