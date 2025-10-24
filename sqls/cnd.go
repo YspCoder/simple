@@ -1,6 +1,7 @@
 package sqls
 
 import (
+	"fmt"
 	"log/slog"
 
 	"gorm.io/gorm"
@@ -87,6 +88,16 @@ func (s *Cnd) In(column string, params interface{}) *Cnd {
 
 func (s *Cnd) NotIn(column string, params interface{}) *Cnd {
 	s.Where(KeywordWrap(column)+" not in (?) ", params)
+	return s
+}
+
+func (s *Cnd) FindInSet(column string, value interface{}) *Cnd {
+	s.Where(fmt.Sprintf("FIND_IN_SET(?, %s)", KeywordWrap(column)), value)
+	return s
+}
+
+func (s *Cnd) NotFindInSet(column string, value interface{}) *Cnd {
+	s.Where(fmt.Sprintf("NOT FIND_IN_SET(?, %s)", KeywordWrap(column)), value)
 	return s
 }
 
