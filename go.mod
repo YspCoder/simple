@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/schema v0.0.6
-	github.com/kataras/iris/v12 v12.2.11
+	github.com/kataras/iris/v12 v12.2.10
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
