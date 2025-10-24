@@ -2,6 +2,7 @@ package web
 
 import (
 	"errors"
+
 	"github.com/YspCoder/simple/common/structs"
 )
 

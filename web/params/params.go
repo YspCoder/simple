@@ -3,34 +3,30 @@ package params
 import (
 	"errors"
 	"fmt"
-	"reflect"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/YspCoder/simple/sqls"
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/cast"
 
 	"github.com/YspCoder/simple/common/dates"
+	"github.com/YspCoder/simple/common/jsons"
 	"github.com/YspCoder/simple/common/strs"
 	"github.com/iris-contrib/schema"
 	"github.com/kataras/iris/v12"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
-	decoder = schema.NewDecoder() // form, url, schema.
+	decoder  = schema.NewDecoder() // form, url, schema.
+	validate = validator.New()
 )
 
 func init() {
 	decoder.AddAliasTag("form", "json")
 	decoder.ZeroEmpty(true)
-	decoder.RegisterConverter(primitive.ObjectID{}, func(value string) reflect.Value {
-		objID, err := primitive.ObjectIDFromHex(value)
-		if err != nil {
-			return reflect.ValueOf(primitive.ObjectID{})
-		}
-		return reflect.ValueOf(objID)
-	})
 }
 
 // param error
@@ -44,7 +40,24 @@ func ReadForm(ctx iris.Context, obj interface{}) error {
 	if len(values) == 0 {
 		return nil
 	}
-	return decoder.Decode(obj, values)
+	if err := decoder.Decode(obj, values); err != nil {
+		return err
+	}
+
+	if err := validate.Struct(obj); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ReadJSON(ctx iris.Context, obj interface{}, opts ...iris.JSONReader) error {
+	if err := ctx.ReadJSON(obj, opts...); err != nil {
+		return err
+	}
+	if err := validate.Struct(obj); err != nil {
+		return err
+	}
+	return nil
 }
 
 func Get(ctx iris.Context, name string) (string, bool) {
@@ -129,17 +142,31 @@ func GetTime(ctx iris.Context, name string) *time.Time {
 func GetInt64Arr(c iris.Context, name string) []int64 {
 	str, ok := Get(c, name)
 	if ok {
+		str = strings.TrimSpace(str)
+		if strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]") {
+			var ret []int64
+			if err := jsons.Parse(str, &ret); err != nil {
+				slog.Error(err.Error())
+			}
+			return ret
+		} else {
+			return StrSplitToInt64Arr(str)
+		}
+	}
+	return nil
+}
+
+func StrSplitToInt64Arr(str string) (ret []int64) {
+	if strs.IsNotBlank(str) {
 		ss := strings.Split(str, ",")
-		var ret []int64
 		for _, s := range ss {
 			i, err := cast.ToInt64E(s)
 			if err == nil {
 				ret = append(ret, i)
 			}
 		}
-		return ret
 	}
-	return nil
+	return
 }
 
 func FormValue(ctx iris.Context, name string) string {
@@ -190,22 +217,16 @@ func FormValueInt64Default(ctx iris.Context, name string, def int64) int64 {
 
 func FormValueInt64Array(ctx iris.Context, name string) []int64 {
 	str := ctx.FormValue(name)
-	if str == "" {
-		return nil
-	}
-	ss := strings.Split(str, ",")
-	if len(ss) == 0 {
-		return nil
-	}
-	var ret []int64
-	for _, v := range ss {
-		item, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			continue
+	str = strings.TrimSpace(str)
+	if strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]") {
+		var ret []int64
+		if err := jsons.Parse(str, &ret); err != nil {
+			slog.Error(err.Error())
 		}
-		ret = append(ret, item)
+		return ret
+	} else {
+		return StrSplitToInt64Arr(str)
 	}
-	return ret
 }
 
 func FormValueStringArray(ctx iris.Context, name string) []string {
@@ -263,14 +284,14 @@ func FormDate(ctx iris.Context, name string) *time.Time {
 	return nil
 }
 
-func GetPaging(ctx iris.Context) (page int64, limit int64) {
-	page = FormValueInt64Default(ctx, "page", 1)
-	limit = FormValueInt64Default(ctx, "limit", 20)
+func GetPaging(ctx iris.Context) *sqls.Paging {
+	page := FormValueIntDefault(ctx, "page", 1)
+	limit := FormValueIntDefault(ctx, "limit", 20)
 	if page <= 0 {
 		page = 1
 	}
 	if limit <= 0 {
 		limit = 20
 	}
-	return
+	return &sqls.Paging{Page: page, Limit: limit}
 }
