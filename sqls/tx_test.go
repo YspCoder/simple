@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mlogclub/simple/sqls"
+	"github.com/YspCoder/simple/sqls"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
