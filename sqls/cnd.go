@@ -91,13 +91,45 @@ func (s *Cnd) NotIn(column string, params interface{}) *Cnd {
 	return s
 }
 
+// 兼容 MySQL + Postgres：匹配逗号分隔的 text 列中是否包含某个 token
 func (s *Cnd) FindInSet(column string, value interface{}) *Cnd {
-	s.Where(fmt.Sprintf("FIND_IN_SET(?, %s)", KeywordWrap(column)), value)
+	// CONCAT(',', col, ',') LIKE CONCAT('%,', value, ',%')
+	s.Where(fmt.Sprintf("CONCAT(',', %s, ',') LIKE CONCAT('%,', ?, ',%%')", KeywordWrap(column)), value)
 	return s
 }
 
 func (s *Cnd) NotFindInSet(column string, value interface{}) *Cnd {
-	s.Where(fmt.Sprintf("NOT FIND_IN_SET(?, %s)", KeywordWrap(column)), value)
+	s.Where(fmt.Sprintf("CONCAT(',', %s, ',') NOT LIKE CONCAT('%,', ?, ',%%')", KeywordWrap(column)), value)
+	return s
+}
+
+// 数组列 col 是否“包含全部 values”（@>）
+func (s *Cnd) PgArrayContainsAll(column string, values []string) *Cnd {
+	s.Where(KeywordWrap(column)+" @> ?::text[]", values)
+	return s
+}
+
+// 数组列 col 是否“与 values 有交集”（&&）=> 等价于 contains any
+func (s *Cnd) PgArrayOverlaps(column string, values []string) *Cnd {
+	s.Where(KeywordWrap(column)+" && ?::text[]", values)
+	return s
+}
+
+// 数组列 col 是否“被 values 包含”（<@）
+func (s *Cnd) PgArrayContainedBy(column string, values []string) *Cnd {
+	s.Where(KeywordWrap(column)+" <@ ?::text[]", values)
+	return s
+}
+
+// 单值是否在数组列中（= ANY(col)）
+func (s *Cnd) PgAnyEqual(column string, value interface{}) *Cnd {
+	s.Where("? = ANY("+KeywordWrap(column)+")", value)
+	return s
+}
+
+// 单值不在数组列中（<> ALL(col)）
+func (s *Cnd) PgNotInAll(column string, value interface{}) *Cnd {
+	s.Where("? <> ALL("+KeywordWrap(column)+")", value)
 	return s
 }
 
